@@ -3,10 +3,13 @@ package org.projeto.projetoweb.entities;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
+import org.projeto.projetoweb.entities.enums.OrderStatus;
 
 import java.io.Serializable;
 import java.time.Instant;
+import java.util.HashSet;
 import java.util.Objects;
+import java.util.Set;
 
 @Entity
 @Table(name = "tb_order")
@@ -17,19 +20,25 @@ public class Order implements Serializable {
     private Long id;
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm:ss'Z'", timezone = "GMT")
     private Instant moment;
-
-
     @ManyToOne
     @JoinColumn(name = "client_id")
     private User client;
 
+    @OneToMany(mappedBy = "id.order")
+    private Set<OrderItem> items = new HashSet<>();
+
+    private Integer orderStatus;
+    @OneToOne(mappedBy = "order", cascade = CascadeType.ALL)
+    private Payment payment;
+
     public Order() {
     }
 
-    public Order(Long id, Instant moment, User client) {
+    public Order(Long id, Instant moment, User client, OrderStatus orderStatus) {
         this.id = id;
         this.moment = moment;
         this.client = client;
+        setOrderStatus(orderStatus);
     }
 
     public Long getId() {
@@ -54,6 +63,34 @@ public class Order implements Serializable {
 
     public void setClient(User client) {
         client = client;
+    }
+
+    public Set<OrderItem> getItem() {
+        return items;
+    }
+
+    public OrderStatus getOrderStatus() {
+        return OrderStatus.valueOf(orderStatus);
+    }
+
+    public void setOrderStatus(OrderStatus orderStatus) {
+        this.orderStatus = orderStatus.getCode();
+    }
+
+    public Double getTotal() {
+        double soma = 0.0;
+        for (OrderItem item : items) {
+            soma += item.getSubTotal();
+        }
+        return soma;
+    }
+
+    public Payment getPayment() {
+        return payment;
+    }
+
+    public void setPayment(Payment payment) {
+        this.payment = payment;
     }
 
     @Override
